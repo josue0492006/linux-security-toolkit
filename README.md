@@ -1,13 +1,22 @@
 # Linux Security Toolkit 🛡️
 
-Colección de scripts en Bash para ciberseguridad defensiva (Blue Team), auditoría de logs y aseguramiento de servidores Linux.
+Toolkit modular de ciberseguridad defensiva (Blue Team) para auditoría de sistemas, hardening de servicios, control de red y respuesta ante incidentes en servidores Linux.
 
-## 📋 Proyectos incluidos
+## 📁 Contenido del Repositorio
 
-### 1. Auditoría de SSH (`audit_ssh.sh`)
-Script para analizar registros de autenticación en Linux (`/var/log/auth.log`), detectar intentos fallidos de inicio de sesión por fuerza bruta y consolidar las direcciones IP atacantes.
+| Script | Categoría | Descripción |
+| :--- | :--- | :--- |
+| **`audit_ssh.sh`** | Auditoría & Logs | Analiza `auth.log` y detecta intentos de fuerza bruta SSH. |
+| **`harden_sshd.sh`** | Hardening | Desactiva accesos inseguros (root, contraseñas) en el archivo `sshd_config`. |
+| **`setup_ufw.sh`** | Cortafuegos | Configura políticas estricta de firewall mediante UFW bajo el modelo Zero Trust. |
+| **`check_ports.sh`** | Monitoreo Red | Muestra los procesos y sockets en escucha activa en el sistema. |
+| **`isolate_host.sh`** | Respuesta Incidentes | Aísla el host de la red en caso de sospecha de vulneración. |
 
-#### Uso:
+## 🚀 Requisitos e Instalación
+
+Para descargar e instalar las herramientas en un entorno Linux/WSL2:
+
 ```bash
-chmod +x audit_ssh.sh
-./audit_ssh.sh
+git clone [https://github.com/TU_USUARIO/linux-security-toolkit.git](https://github.com/TU_USUARIO/linux-security-toolkit.git)
+cd linux-security-toolkit
+chmod +x *.sh
