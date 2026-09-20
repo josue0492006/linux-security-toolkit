@@ -12,3 +12,10 @@ Manual de referencia rápida para administración de sistemas y operaciones en t
 | **`chmod`** | `chmod +x script.sh` | Otorga permisos de ejecución a un archivo `.sh`. |
 | **`grep`** | `grep "Failed" auth.log` | Filtra e imprime líneas que coincidan con un texto. |
 | **`nano`** | `nano script.sh` | Abre el editor de texto básico en la terminal. |
+### Ejemplos de reglas dentro de /etc/sudoers (vía visudo)
+
+| Caso de Uso | Regla de Ejemplo | Descripción |
+| :--- | :--- | :--- |
+| **Comando específico** | `sofia ALL=(ALL) /usr/bin/systemctl restart nginx` | Permite ejecutar solo el reinicio de Nginx con sudo. |
+| **Sin contraseña** | `ana ALL=(ALL) NOPASSWD: /usr/bin/apt update` | Ejecuta el comando especificado sin pedir contraseña. |
+| **Grupo de usuarios** | `%devs ALL=(ALL) /usr/bin/docker` | Aplica la regla a todos los usuarios del grupo `devs` (`%`). |
