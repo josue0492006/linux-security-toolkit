@@ -14,7 +14,14 @@
 | `ufw allow` | `sudo ufw allow 22/tcp` | Abre un puerto TCP específico en el firewall local. |
 | `ssh` | `ssh -i ~/.ssh/id_ed25519 user@ip` | Conecta de forma segura a un servidor remoto con llave. |
 | `ssh-keygen` | `ssh-keygen -t ed25519 -C "nota"` | Genera un par de llaves criptográficas pública/privada. |
-| `nc` | `nc -zv 192.168.1.1 80` | Escanea o prueba la conectividad directa a un puerto. |
+| `nc` | `nc -zv 192.168.1.1 80` | Escanea o prueba la conectividad directa a un puerto.                              |### Diagnóstico de IPs y Puertos
+- `ip a`: Muestra las interfaces de red y la dirección IP privada activa.
+- `ss -tulpn`: Lista los puertos abiertos (escuchando) en el sistema.
+  - `-t`: Filtra por TCP.
+  - `-u`: Filtra por UDP.
+  - `-l`: Muestra solo puertos en escucha (LISTEN).
+  - `-p`: Muestra el proceso/programa asociado.
+  - `-n`: Muestra puertos en número en lugar de nombre del servicio. 
 | **MÓDULO 3: DOCKER & CONTAINER SECURITY** | | |
 | `docker ps` | `docker ps -a` | Lista todos los contenedores en ejecución y detenidos. |
 | `docker run` | `docker run -d --name web nginx` | Despliega un contenedor en segundo plano. |
