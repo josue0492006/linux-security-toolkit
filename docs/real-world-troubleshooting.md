@@ -1,118 +1,170 @@
-# 🛠️ Real-World Troubleshooting Scenarios
+# 🛡️ Real-World Troubleshooting Scenarios
 
-Documentación técnica de **diagnóstico, análisis de causa raíz (Root Cause Analysis)** y resolución de fallos en entornos **Linux/Ubuntu**.
+> **Linux • Systemd • SSH • Networking • UFW • Logs • Blue Team**
 
-Estos escenarios están orientados a la administración de sistemas, **Cloud Security** y **Blue Team**, utilizando herramientas como `systemd`, `journalctl`, SSH, redes y UFW.
+Colección de escenarios prácticos de **troubleshooting, análisis de logs y Root Cause Analysis (RCA)** en entornos Linux/Ubuntu.
 
----
-
-## 📋 Índice
-
-1. [Critical Service Crash Investigation via System Logs](#1-critical-service-crash-investigation-via-system-logs)
-2. [Service Failed to Start Due to Strict File Permissions](#2-service-failed-to-start-due-to-strict-file-permissions)
-3. [Service Unreachable Over Private LAN](#3-service-unreachable-over-private-lan)
-4. [SSH Key Authentication Refused](#4-ssh-key-authentication-refused)
-5. [Emergency Rollback After Invalid SSH Configuration](#5-emergency-rollback-after-invalid-ssh-configuration)
-6. [Port Binding Conflict on Ubuntu 2404](#6-port-binding-conflict-on-ubuntu-2404)
-7. [Administrator Locked Out After Enabling UFW](#7-administrator-locked-out-after-enabling-ufw)
-8. [SSH Connection Timeout Due to IP Blocking in UFW](#8-ssh-connection-timeout-due-to-ip-blocking-in-ufw)
-9. [High System Load Due to SSH Brute Force Attacks](#9-high-system-load-due-to-ssh-brute-force-attacks)
+El objetivo es practicar la identificación de fallos, análisis de evidencia, aplicación de correcciones y verificación del resultado utilizando herramientas nativas de Linux.
 
 ---
 
-# 1. Critical Service Crash Investigation via System Logs
+## 📌 Overview
 
-**Categoría:** `Systemd Logs & Journald` — Módulo 1
+| Área             | Tecnologías / Herramientas            |
+| ---------------- | ------------------------------------- |
+| 🐧 Sistema       | Linux / Ubuntu                        |
+| ⚙️ Servicios     | systemd / systemctl                   |
+| 📜 Logs          | journalctl / Journald                 |
+| 🔐 Acceso remoto | SSH                                   |
+| 🌐 Redes         | IP / Sockets / Netcat                 |
+| 🧱 Firewall      | UFW                                   |
+| 🔎 Diagnóstico   | ss / grep / awk                       |
+| 🛡️ Seguridad    | SSH Hardening / Brute Force Detection |
+| 🧠 Metodología   | Root Cause Analysis                   |
 
-### Síntoma
+---
+
+## 🗂️ Scenarios
+
+|  # | Scenario                             | Área                  |
+| -: | ------------------------------------ | --------------------- |
+| 01 | Critical Service Crash Investigation | Systemd / Logs        |
+| 02 | Service Failed to Start              | Permissions / Systemd |
+| 03 | Service Unreachable Over Private LAN | Networking / Sockets  |
+| 04 | SSH Key Authentication Refused       | SSH / Hardening       |
+| 05 | Invalid SSH Configuration            | SSH / Validation      |
+| 06 | SSH Port Binding Conflict            | Systemd / Networking  |
+| 07 | Administrator Locked Out After UFW   | Firewall / SSH        |
+| 08 | SSH Timeout Due to IP Blocking       | Firewall / Networking |
+| 09 | SSH Brute Force Detection            | Security / Monitoring |
+
+---
+
+# 🔎 Troubleshooting Methodology
+
+Los escenarios siguen una metodología basada en cinco etapas:
+
+```text
+┌──────────────┐
+│   SYMPTOM    │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ INVESTIGATION│
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│  ROOT CAUSE  │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ REMEDIATION  │
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ VERIFICATION │
+└──────────────┘
+```
+
+La idea es **no aplicar cambios a ciegas**: primero se recopila evidencia, después se identifica la causa y finalmente se valida la solución.
+
+---
+
+# 01 · Critical Service Crash Investigation
+
+> **Category:** `Systemd Logs & Journald`
+> **Focus:** Service failure investigation
+
+### 🔴 Symptom
 
 Un servicio crítico cayó durante la madrugada y el servidor sufrió una degradación temporal o un reinicio imprevisto.
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Consultar el historial de arranques del sistema:**
+**1. Consultar el historial de arranques:**
 
 ```bash
 sudo journalctl --list-boots
 ```
 
-**2. Inspeccionar los registros del arranque anterior (`-1`) filtrando errores:**
+**2. Revisar los errores del arranque anterior:**
 
 ```bash
 sudo journalctl -b -1 -p err --no-pager
 ```
 
-**3. Buscar eventos relacionados con errores, fallos o agotamiento de memoria:**
+**3. Buscar eventos relacionados con errores, fallos o memoria:**
 
 ```bash
 sudo journalctl -b -1 --no-pager | grep -iE "error|failed|out of memory"
 ```
 
-### Causa raíz
+### 🎯 Root Cause
 
 Invocación del mecanismo **Out-Of-Memory (OOM) Killer** por parte del kernel Linux debido al agotamiento completo de la memoria RAM disponible.
 
-### Solución
+### 🛠️ Remediation
 
-Ajustar el límite de recursos en la unidad del servicio dentro de:
+Ajustar los límites de recursos del servicio en:
 
 ```text
 /etc/systemd/system/
 ```
 
-o ampliar el espacio de intercambio (**swap**) para mitigar picos de consumo de memoria.
+o ampliar el espacio de intercambio (**swap**) para mitigar picos de memoria.
 
-### Verificación
-
-Comprobar el estado de la memoria RAM y swap:
+### ✅ Verification
 
 ```bash
 free -h
 ```
 
+Comprobar el estado de la memoria RAM y del espacio swap.
+
 ---
 
-# 2. Service Failed to Start Due to Strict File Permissions
+# 02 · Service Failed to Start
 
-**Categoría:** `Permisos POSIX & Systemd` — Módulo 1
+> **Category:** `POSIX Permissions & Systemd`
+> **Focus:** File permissions / executable configuration
 
-### Síntoma
+### 🔴 Symptom
 
-Un servicio personalizado no puede iniciar y `systemctl status` devuelve:
+Un servicio personalizado no puede iniciar y `systemctl status` muestra:
 
 ```text
 (code=exited, status=203/EXEC)
 ```
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Revisar los últimos logs generados por la unidad de systemd:**
+**1. Revisar los logs del servicio:**
 
 ```bash
 sudo journalctl -u <nombre_servicio> -n 20 --no-pager
 ```
 
-**2. Verificar los permisos y la propiedad del script o binario ejecutable:**
+**2. Comprobar permisos y propiedad del ejecutable:**
 
 ```bash
 ls -l /usr/local/bin/script_servicio.sh
 ```
 
-**3. Salida observada:**
+**3. Resultado observado:**
 
 ```text
 -rw-r--r-- 1 root root
 ```
 
-El archivo no cuenta con permiso de ejecución.
+El archivo no tiene permiso de ejecución.
 
-### Causa raíz
+### 🎯 Root Cause
 
-El archivo indicado en `ExecStart` no tiene el bit de ejecución (`+x`) o pertenece a un usuario/grupo que no tiene los permisos necesarios.
+El archivo utilizado por `ExecStart` no cuenta con el bit de ejecución (`+x`) o pertenece a un usuario/grupo sin acceso adecuado.
 
-### Solución
+### 🛠️ Remediation
 
-Otorgar permisos de ejecución:
+Otorgar permiso de ejecución:
 
 ```bash
 sudo chmod +x /usr/local/bin/script_servicio.sh
@@ -124,73 +176,78 @@ Reiniciar el servicio:
 sudo systemctl restart <nombre_servicio>
 ```
 
-### Verificación
-
-Confirmar que el servicio se encuentre activo:
+### ✅ Verification
 
 ```bash
 systemctl is-active <nombre_servicio>
 ```
 
+El resultado esperado es:
+
+```text
+active
+```
+
 ---
 
-# 3. Service Unreachable Over Private LAN
+# 03 · Service Unreachable Over Private LAN
 
-**Categoría:** `Diagnóstico de Redes & Sockets` — Módulo 2 · Bloque 1
+> **Category:** `Networking & Sockets`
+> **Focus:** Network binding
 
-### Síntoma
+### 🔴 Symptom
 
-Un servicio funciona correctamente en la máquina donde está instalado, pero otros equipos de la red local reciben:
+El servicio funciona localmente, pero otros equipos de la red reciben:
 
 ```text
 Connection refused
 ```
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Verificar las interfaces de red y las IP asignadas:**
+**1. Revisar las interfaces de red:**
 
 ```bash
 ip a
 ```
 
-**2. Inspeccionar qué interfaz está utilizando el servicio:**
+**2. Comprobar qué dirección está utilizando el servicio:**
 
 ```bash
 sudo ss -tlpn | grep :8080
 ```
 
-**3. Salida observada:**
+**3. Resultado observado:**
 
 ```text
 LISTEN 0 128 127.0.0.1:8080
 ```
 
-### Causa raíz
+### 🎯 Root Cause
 
-El servicio está vinculado exclusivamente a la interfaz de loopback:
+El servicio está vinculado exclusivamente a:
 
 ```text
 127.0.0.1
 ```
 
-Por lo tanto, solamente acepta conexiones desde la propia máquina.
+Esto corresponde a la interfaz **loopback**, por lo que el servicio solamente acepta conexiones desde la propia máquina.
 
-### Solución
+### 🛠️ Remediation
 
-Cambiar la dirección de escucha del servicio a:
+Cambiar la dirección de escucha a:
 
 ```text
 0.0.0.0
 ```
 
-para aceptar conexiones en todas las interfaces, o utilizar específicamente la IP privada de la interfaz de red.
+o utilizar la IP privada específica de la interfaz de red.
 
 Posteriormente, recargar el servicio.
 
-### Verificación
+### ✅ Verification
 
-Probar la conectividad desde otro equipo:
+Desde otro equipo:
 
 ```bash
 nc -zv <IP_SERVIDOR> 8080
@@ -198,37 +255,40 @@ nc -zv <IP_SERVIDOR> 8080
 
 ---
 
-# 4. SSH Key Authentication Refused
+# 04 · SSH Key Authentication Refused
 
-**Categoría:** `Criptografía & SSH Hardening` — Módulo 2 · Bloque 2
+> **Category:** `SSH & Hardening`
+> **Focus:** Public-key authentication
 
-### Síntoma
+### 🔴 Symptom
 
-El cliente intenta conectarse mediante una llave privada `id_ed25519`, pero el servidor rechaza la conexión:
+El cliente intenta conectarse mediante `id_ed25519`, pero el servidor responde:
 
 ```text
 Permission denied (publickey)
 ```
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Consultar los registros del servicio SSH:**
+Consultar los logs de SSH:
 
 ```bash
 sudo journalctl -u ssh -n 30 --no-pager
 ```
 
-**2. Log observado:**
+### 📋 Evidence
 
 ```text
 Authentication refused: bad ownership or modes for directory /home/usuario/.ssh
 ```
 
-### Causa raíz
+### 🎯 Root Cause
 
-SSH utiliza la política **StrictModes**. Si el directorio `.ssh` o el archivo `authorized_keys` tienen permisos demasiado abiertos, el demonio puede rechazar la autenticación por motivos de seguridad.
+SSH aplica la política **StrictModes**.
 
-### Solución
+Los permisos demasiado abiertos en `.ssh` o `authorized_keys` pueden provocar que el servidor rechace la autenticación.
+
+### 🛠️ Remediation
 
 Aplicar permisos estrictos:
 
@@ -237,9 +297,7 @@ chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-### Verificación
-
-Intentar nuevamente la conexión:
+### ✅ Verification
 
 ```bash
 ssh usuario@ip_servidor
@@ -247,75 +305,80 @@ ssh usuario@ip_servidor
 
 ---
 
-# 5. Emergency Rollback After Invalid SSH Configuration
+# 05 · Emergency Rollback After Invalid SSH Configuration
 
-**Categoría:** `SSH Hardening & Syntax Validation` — Módulo 2 · Bloque 2
+> **Category:** `SSH Hardening & Syntax Validation`
+> **Focus:** Safe configuration changes
 
-### Síntoma
+### 🔴 Symptom
 
-Después de modificar `/etc/ssh/sshd_config`, se reinicia el servicio y aparece:
+Después de modificar:
+
+```text
+/etc/ssh/sshd_config
+```
+
+el servicio devuelve:
 
 ```text
 Job for ssh.service failed
 ```
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Inspeccionar el estado del servicio:**
+**1. Revisar el estado del servicio:**
 
 ```bash
 sudo systemctl status ssh
 ```
 
-**2. Validar la sintaxis antes de reiniciar o recargar SSH:**
+**2. Validar la configuración:**
 
 ```bash
 sudo sshd -t
 ```
 
-**3. Resultado observado:**
+### 📋 Evidence
 
 ```text
 /etc/ssh/sshd_config line 38: Bad configuration option: PermittRootLogin
 ```
 
-### Causa raíz
+### 🎯 Root Cause
 
-Error tipográfico en la directiva:
+Error tipográfico:
 
 ```text
 PermittRootLogin
 ```
 
-cuando debería ser:
+en lugar de:
 
 ```text
 PermitRootLogin
 ```
 
-### Solución
+### 🛠️ Remediation
 
-**1. Corregir la configuración:**
+Editar la configuración:
 
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-**2. Volver a validar la sintaxis:**
+Validar nuevamente:
 
 ```bash
 sudo sshd -t
 ```
 
-Si no devuelve ningún error, continuar.
-
-**3. Recargar SSH sin desconectar las sesiones activas:**
+Si no existen errores, recargar SSH:
 
 ```bash
 sudo systemctl reload ssh
 ```
 
-### Verificación
+### ✅ Verification
 
 ```bash
 systemctl is-active ssh
@@ -323,11 +386,12 @@ systemctl is-active ssh
 
 ---
 
-# 6. Port Binding Conflict on Ubuntu 24.04
+# 06 · SSH Port Binding Conflict
 
-**Categoría:** `Systemd Sockets & Redes` — Módulo 2 · Bloques 1/2
+> **Category:** `Systemd Sockets & Networking`
+> **Focus:** Socket activation
 
-### Síntoma
+### 🔴 Symptom
 
 Se configura:
 
@@ -335,59 +399,64 @@ Se configura:
 Port 2222
 ```
 
-en `/etc/ssh/sshd_config`, pero SSH continúa escuchando únicamente en el puerto `22`.
+en:
 
-### Diagnóstico
+```text
+/etc/ssh/sshd_config
+```
 
-**1. Auditar los sockets y procesos que están escuchando:**
+pero SSH continúa escuchando en el puerto `22`.
+
+### 🔎 Investigation
+
+Comprobar los procesos y sockets:
 
 ```bash
 sudo ss -tlpn | grep ssh
 ```
 
-**2. Resultado observado:**
+El proceso observado pertenece a `systemd` y no directamente a `sshd`.
 
-El PID pertenece a `systemd` y no directamente al proceso `sshd`.
+### 🎯 Root Cause
 
-### Causa raíz
-
-En Ubuntu 24.04+, la escucha de SSH puede estar gestionada mediante **systemd socket activation**, utilizando:
+La escucha del puerto está gestionada mediante:
 
 ```text
 ssh.socket
 ```
 
-Esto puede hacer que el socket controle la escucha del puerto independientemente de la configuración esperada en `sshd_config`.
+utilizando **systemd socket activation**.
 
-### Solución
+### 🛠️ Remediation
 
-Desactivar la gestión mediante socket:
+Desactivar el socket:
 
 ```bash
 sudo systemctl disable --now ssh.socket
 ```
 
-Habilitar e iniciar el servicio SSH tradicional:
+Habilitar el servicio SSH:
 
 ```bash
 sudo systemctl enable --now ssh.service
 ```
 
-### Verificación
-
-Comprobar que `sshd` esté escuchando en el puerto personalizado:
+### ✅ Verification
 
 ```bash
 sudo ss -tlpn | grep 2222
 ```
 
+Comprobar que `sshd` está escuchando en el puerto personalizado.
+
 ---
 
-# 7. Administrator Locked Out After Enabling UFW
+# 07 · Administrator Locked Out After Enabling UFW
 
-**Categoría:** `Cortafuegos & UFW` — Módulo 2 · Bloque 3
+> **Category:** `Firewall & UFW`
+> **Focus:** Firewall rule management
 
-### Síntoma
+### 🔴 Symptom
 
 Después de ejecutar:
 
@@ -397,7 +466,7 @@ sudo ufw enable
 
 la sesión SSH se interrumpe o las conexiones posteriores son bloqueadas.
 
-### Diagnóstico
+### 🔎 Investigation
 
 Desde una consola física o de rescate:
 
@@ -405,17 +474,17 @@ Desde una consola física o de rescate:
 sudo ufw status verbose
 ```
 
-### Resultado observado
+### 📋 Evidence
 
 ```text
 Default: deny (incoming), allow (outgoing)
 ```
 
-No existe una regla que permita la entrada por el puerto SSH.
+No existe una regla que permita el acceso al puerto SSH.
 
-### Causa raíz
+### 🎯 Root Cause
 
-Se aplicó la política:
+Se aplicó una política:
 
 ```text
 Default Deny
@@ -423,7 +492,7 @@ Default Deny
 
 sin crear previamente una excepción para SSH.
 
-### Solución
+### 🛠️ Remediation
 
 Permitir el puerto SSH:
 
@@ -437,7 +506,7 @@ Después habilitar UFW:
 sudo ufw enable
 ```
 
-### Verificación
+### ✅ Verification
 
 ```bash
 sudo ufw status numbered
@@ -451,29 +520,30 @@ ALLOW IN
 
 ---
 
-# 8. SSH Connection Timeout Due to IP Blocking in UFW
+# 08 · SSH Connection Timeout Due to IP Blocking
 
-**Categoría:** `Cortafuegos & Filtrado Avanzado` — Módulo 2 · Bloque 3
+> **Category:** `Firewall & Advanced Filtering`
+> **Focus:** IP-based filtering
 
-### Síntoma
+### 🔴 Symptom
 
-Un equipo cliente específico no puede conectarse por SSH y la conexión termina con:
+Un equipo específico no puede conectarse por SSH y obtiene:
 
 ```text
 Operation timed out
 ```
 
-Mientras tanto, otros equipos sí pueden conectarse.
+Mientras otros equipos mantienen acceso.
 
-### Diagnóstico
+### 🔎 Investigation
 
-Listar las reglas numeradas:
+Listar las reglas de UFW:
 
 ```bash
 sudo ufw status numbered
 ```
 
-### Resultado observado
+### 📋 Evidence
 
 Existe una regla:
 
@@ -481,15 +551,15 @@ Existe una regla:
 DENY IN
 ```
 
-dirigida hacia la IP o segmento de red del cliente.
+dirigida a la IP o segmento de red del cliente.
 
-### Causa raíz
+### 🎯 Root Cause
 
-El firewall está bloqueando la conexión mediante una regla basada en IP o máscara de red.
+Una regla del firewall está bloqueando la conexión mediante una dirección IP o máscara de red.
 
-### Solución
+### 🛠️ Remediation
 
-Eliminar la regla utilizando su número:
+Eliminar la regla:
 
 ```bash
 sudo ufw delete <numero_regla>
@@ -501,9 +571,9 @@ O permitir explícitamente la IP:
 sudo ufw allow from <IP_CLIENTE> to any port 2222 proto tcp
 ```
 
-### Verificación
+### ✅ Verification
 
-Probar la conexión desde el equipo cliente:
+Probar la conexión desde el cliente:
 
 ```bash
 nc -zv <IP_SERVIDOR> 2222
@@ -511,80 +581,192 @@ nc -zv <IP_SERVIDOR> 2222
 
 ---
 
-# 9. High System Load Due to SSH Brute Force Attacks
+# 09 · SSH Brute Force Detection
 
-**Categoría:** `Seguridad, Monitoreo & Auditoría` — Módulo 2 · Bloque 4
+> **Category:** `Security, Monitoring & Auditing`
+> **Focus:** Authentication monitoring
 
-### Síntoma
+### 🔴 Symptom
 
-Se detecta lentitud en el servidor y una elevada cantidad de procesos SSH intentando autenticarse continuamente.
+El servidor presenta lentitud y una cantidad elevada de intentos de autenticación SSH.
 
-### Diagnóstico
+### 🔎 Investigation
 
-**1. Inspeccionar intentos de autenticación fallidos en tiempo real:**
+**1. Monitorizar intentos fallidos en tiempo real:**
 
 ```bash
 sudo journalctl -u ssh -f | grep "Failed password"
 ```
 
-**2. Contar los intentos agrupados por dirección IP de origen:**
+**2. Contabilizar intentos por IP de origen:**
 
 ```bash
-sudo journalctl -u ssh --no-pager | grep "Failed password" | awk '{print $(NF-2)}' | sort | uniq -c | sort -nr
+sudo journalctl -u ssh --no-pager | \
+grep "Failed password" | \
+awk '{print $(NF-2)}' | \
+sort | uniq -c | sort -nr
 ```
 
-### Causa raíz
+### 🎯 Root Cause
 
-Ataque automatizado de fuerza bruta dirigido al servicio SSH, normalmente contra el puerto predeterminado:
+Ataque automatizado de **fuerza bruta** dirigido al servicio SSH.
+
+El objetivo habitual es el puerto predeterminado:
 
 ```text
 22
 ```
 
-### Solución
+### 🛠️ Remediation
 
-**1. Cambiar el puerto SSH por defecto:**
+**1. Utilizar un puerto SSH no estándar:**
 
 ```text
 2222
 ```
 
-**2. Restringir los usuarios permitidos mediante `AllowUsers`:**
+**2. Restringir usuarios mediante `AllowUsers`:**
 
 ```text
 AllowUsers usuario
 ```
 
-**3. Deshabilitar la autenticación mediante contraseña:**
+**3. Deshabilitar autenticación mediante contraseña:**
 
 ```text
 PasswordAuthentication no
 ```
 
-### Verificación
+### ✅ Verification
 
-Monitorear nuevamente los eventos:
+Monitorizar nuevamente los eventos:
 
 ```bash
 sudo journalctl -u ssh -f
 ```
 
-y comprobar la reducción de intentos de autenticación fallidos.
+Comprobar la evolución de los intentos de autenticación fallidos.
 
 ---
 
-## 🎯 Skills Practiced
+# 🧠 Skills Practiced
 
-Este laboratorio permitió practicar:
+Este laboratorio permitió practicar diferentes áreas relacionadas con **Linux Administration, Blue Team y Cloud Security**:
 
-* 🐧 Administración de Linux/Ubuntu
-* ⚙️ `systemd` y `systemctl`
-* 📜 `journalctl` y análisis de logs
-* 🔐 SSH y autenticación mediante llaves
-* 🔒 Hardening y permisos POSIX
-* 🌐 Diagnóstico de redes y sockets
-* 🧱 UFW y reglas de firewall
-* 🔎 Análisis de causa raíz (RCA)
-* 🚨 Detección de intentos de fuerza bruta
-* 🛡️ Troubleshooting orientado a Blue Team
-* ☁️ Fundamentos aplicables a Cloud Security
+```text
+Linux Administration
+        │
+        ├── systemd / systemctl
+        ├── Journald / journalctl
+        └── POSIX Permissions
+        │
+        ▼
+Network Troubleshooting
+        │
+        ├── ip
+        ├── ss
+        └── nc
+        │
+        ▼
+Secure Remote Access
+        │
+        ├── SSH
+        ├── Public-Key Authentication
+        └── SSH Hardening
+        │
+        ▼
+Network Security
+        │
+        └── UFW
+        │
+        ▼
+Blue Team
+        │
+        ├── Log Analysis
+        ├── Incident Detection
+        ├── Brute Force Detection
+        └── Root Cause Analysis
+```
+
+---
+
+# 📚 Key Takeaways
+
+### `systemctl`
+
+Permite administrar servicios y comprobar su estado:
+
+```bash
+systemctl status <servicio>
+systemctl start <servicio>
+systemctl stop <servicio>
+systemctl restart <servicio>
+```
+
+### `journalctl`
+
+Permite investigar eventos y errores registrados por systemd:
+
+```bash
+journalctl -u <servicio>
+```
+
+### `ss`
+
+Permite identificar puertos y sockets en escucha:
+
+```bash
+sudo ss -tlpn
+```
+
+### `ufw`
+
+Permite administrar reglas básicas del firewall:
+
+```bash
+sudo ufw status
+```
+
+### `sshd -t`
+
+Permite validar la configuración de SSH antes de aplicar cambios:
+
+```bash
+sudo sshd -t
+```
+
+---
+
+# 🛡️ Blue Team Perspective
+
+Estos ejercicios siguen una idea fundamental del trabajo defensivo:
+
+> **Detect → Investigate → Identify → Remediate → Verify**
+
+La herramienta por sí sola no es el objetivo.
+
+El objetivo es aprender a utilizar **evidencia técnica** para determinar qué ocurrió, encontrar la causa raíz y aplicar una corrección controlada.
+
+---
+
+## 📈 Progress
+
+| Área                    | Estado |
+| ----------------------- | :----: |
+| Linux Administration    |    ✅   |
+| Systemd                 |    ✅   |
+| Journald / Logs         |    ✅   |
+| POSIX Permissions       |    ✅   |
+| SSH                     |    ✅   |
+| SSH Hardening           |    ✅   |
+| Network Troubleshooting |    ✅   |
+| UFW                     |    ✅   |
+| Brute Force Detection   |    ✅   |
+| Root Cause Analysis     |    ✅   |
+
+---
+
+> **Lab Status:** Completed
+> **Focus:** Linux Administration / Blue Team / Cloud Security
+> **Environment:** Ubuntu / Linux
+> **Methodology:** Troubleshooting + Root Cause Analysis
