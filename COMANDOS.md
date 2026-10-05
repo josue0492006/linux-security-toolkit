@@ -4,7 +4,7 @@
 
 ## 🛡️ MÓDULO 1: LINUX HARDENING Y FUNDAMENTOS
 
-### 📁 Permisos de Archivos y Seguridad Octal
+### 📁 Bloque 1: Permisos de Archivos y Seguridad Octal
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `ls -la /ruta/` | Muestra todos los archivos (incluidos ocultos `.`) con permisos octales y propietarios. |
@@ -14,7 +14,7 @@
 | `chown -R usuario:grupo /directorio/` | Cambia el propietario y grupo de un directorio de forma recursiva. |
 | `find / -perm -4000 2>/dev/null` | Audita el sistema buscando archivos con bit SUID activado (riesgo de elevación). |
 
-### 🧩 Administración de Servicios y Logs (Systemd)
+### 🧩 Bloque 2: Administración de Servicios y Logs (Systemd)
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `sudo systemctl status <servicio>` | Muestra si el servicio está activo, inactivo o fallido (`failed`). |
@@ -31,7 +31,7 @@
 
 ## 🌐 MÓDULO 2: REDES, SSH, FIREWALLS Y SEGURIDAD AVANZADA
 
-### 📡 Bloque 1 & 2: Diagnóstico de Redes e Interfaces
+### 📡 Bloque 1: Diagnóstico de Redes e Interfaces
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `ip a` | Muestra las interfaces de red activas, MACs e IPs asignadas (v4/v6). |
@@ -42,7 +42,7 @@
 | `nc -zv <IP> <puerto>` | Prueba si un puerto TCP específico está abierto en un host remoto (Netcat). |
 | `curl -I <URL>` | Muestra la respuesta HTTP (headers/códigos de estado) de un servidor web. |
 
-### 🔒 Bloque 3: SSH Hardening y Gestión de Llaves
+### 🔒 Bloque 2: SSH Hardening y Gestión de Llaves
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `sudo sshd -t` | Audita la sintaxis de `/etc/ssh/sshd_config` antes de reiniciar (previene bloqueos). |
@@ -52,7 +52,7 @@
 | `sudo systemctl disable --now ssh.socket` | Libera el puerto 22 gestionado por Systemd Socket en Ubuntu 24.04+. |
 | `sudo journalctl -u ssh -n 20 --no-pager` | Revisa bloqueos e intentos fallidos de autenticación SSH. |
 
-### 🧱 Bloque 4: Cortafuegos (UFW / Firewalls)
+### 🧱 Bloque 3: Cortafuegos (UFW / Firewalls)
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `sudo ufw status verbose` | Muestra el estado del firewall y sus reglas activas de forma detallada. |
@@ -63,7 +63,7 @@
 | `sudo ufw reload` | Recarga las reglas del cortafuegos sin reiniciar el servicio. |
 | `sudo ufw enable` / `sudo ufw disable` | Activa o desactiva el firewall UFW. |
 
-### 📦 Bloque 5: Transferencia de Archivos y Sincronización (`scp` y `rsync`)
+### 📦 Bloque 4: Transferencia de Archivos y Sincronización (`scp` y `rsync`)
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `scp -P <puerto> archivo.txt usuario@servidor:/ruta/` | Copia un archivo local hacia un servidor remoto vía SSH. |
@@ -73,7 +73,7 @@
 | `rsync -avz --dry-run origen/ destino/` | Muestra qué archivos se transferirían o borrarían sin realizar cambios reales (Modo prueba). |
 | `rsync -avz --progress origen/ destino/` | Muestra la velocidad de transferencia y tiempo restante barra por barra. |
 
-### 🔐 Bloque 6: Hardening Avanzado, Restricciones de Usuario y Fail2ban
+### 🔐 Bloque 5: Hardening Avanzado y Restricciones de Usuario
 | Comando | Descripción / Uso |
 | :--- | :--- |
 | `sudo nano /etc/ssh/sshd_config` | Edita el archivo principal de política SSH para aplicar reglas restrictivas. |
@@ -82,6 +82,10 @@
 | `PasswordAuthentication no` | Fuerza el uso exclusivo de llaves SSH, deshabilitando el login por contraseña. |
 | `MaxAuthTries 3` | Limita la cantidad de intentos fallidos de contraseña/llave por conexión antes de desconectar. |
 | `ClientAliveInterval 300` | Envía un paquete de control cada 300 segundos para detectar y cerrar sesiones SSH inactivas. |
+
+### 🔍 Bloque 6: Auditoría de Accesos, Monitoreo y Fail2ban
+| Comando | Descripción / Uso |
+| :--- | :--- |
 | `sudo journalctl -u ssh -f` | Monitorea los intentos de autenticación SSH en tiempo real. |
 | `sudo grep "Failed password" /var/log/auth.log` | Busca todos los intentos fallidos de contraseña en los registros históricos de acceso. |
 | `sudo grep "Accepted" /var/log/auth.log` | Muestra el historial completo de inicios de sesión exitosos en el servidor. |
