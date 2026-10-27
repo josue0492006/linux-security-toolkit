@@ -82,7 +82,8 @@ systemctl list-units --type=service | grep -iE "nginx|apache|gunicorn|node|pytho
 # Ver qué procesos están corriendo en memoria con sus rutas completas
 ps aux | grep -iE "nginx|gunicorn|node|python"
 ---
-
+# Versión ampliada para incluir frameworks modernos (FastAPI, Uvicorn, etc.)
+systemctl list-units --type=service | grep -iE "nginx|apache|gunicorn|uvicorn|fastapi|node|python|java|mysql|postgres"
 <p align="center">
   <b>🚀 Preparándose para la operación 24/7</b>
 </p>
