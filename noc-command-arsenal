@@ -1,0 +1,69 @@
+# 🛡️ NOC L1 - Arsenal de Comandos y Referencia Operativa
+
+Guía de referencia rápida y comandos esenciales de Linux para el diagnóstico, monitoreo y resolución de incidentes en un entorno de Centro de Operaciones de Red (NOC).
+
+---
+
+## 🖥️ 1. Salud del Sistema y Recursos
+*Utilizados cuando una alerta indica saturación de hardware o bajo rendimiento.*
+
+* **`df -h`**
+  * **Qué hace:** Muestra el espacio disponible y usado en los discos y particiones en formato legible (GB/MB).
+  * **Uso NOC:** Validar alertas de disco lleno (`No space left on device`).
+* **`free -h`**
+  * **Qué hace:** Muestra la memoria RAM total, usada, libre y en caché.
+  * **Uso NOC:** Verificar si el servidor sufre de agotamiento de memoria o si hay saturación de RAM.
+* **`top` (o `htop`)**
+  * **Qué hace:** Lista en tiempo real los procesos del sistema ordenados por consumo de CPU y memoria, mostrando su PID.
+  * **Uso NOC:** Identificar procesos colgados o aplicaciones con consumo descontrolado de recursos.
+* **`uptime`**
+  * **Qué hace:** Muestra el tiempo de actividad del sistema, usuarios conectados y los promedios de carga (*load average*).
+  * **Uso NOC:** Obtener una foto rápida de la estabilidad general del servidor.
+
+---
+
+## ⚙️ 2. Gestión de Servicios
+*Utilizados para verificar o restablecer el estado operativo de los servicios.*
+
+* **`systemctl status <servicio>`**
+  * **Qué hace:** Consulta el estado operativo actual de un servicio administrado por systemd (ej. `nginx`, `mysql`).
+  * **Uso NOC:** Primer paso obligatorio ante una alerta de servicio caído.
+* **`systemctl restart <servicio>`**
+  * **Qué hace:** Detiene y vuelve a iniciar un servicio del sistema.
+  * **Uso NOC:** Aplicar un reinicio controlado autorizado por los Runbooks (SOPs) para mitigar fallos temporales.
+
+---
+
+## 📜 3. Análisis de Logs y Archivos
+*Utilizados para rastrear la causa raíz de un incidente a través de las bitácoras.*
+
+* **`tail -f /ruta/al/archivo.log`**
+  * **Qué hace:** Muestra las últimas líneas de un archivo y se queda escuchando en tiempo real las nuevas entradas.
+  * **Uso NOC:** Monitorear errores en vivo mientras se reproduce una falla.
+* **`tail -n 50 /ruta/al/archivo.log`**
+  * **Qué hace:** Muestra únicamente las últimas 50 líneas del archivo de registro.
+  * **Uso NOC:** Revisión rápida del histórico inmediato de un error.
+* **`grep -i "error" /ruta/al/archivo.log`**
+  * **Qué hace:** Busca un patrón de texto específico dentro de un archivo, ignorando mayúsculas/minúsculas (`-i`).
+  * **Uso NOC:** Filtrar palabras clave como `CRITICAL`, `FAILED` o `ERROR` en bitácoras pesadas.
+* **`truncate -s 0 /ruta/al/archivo.log`**
+  * **Qué hace:** Vacía el contenido de un archivo a 0 bytes manteniendo el descriptor abierto.
+  * **Uso NOC:** Liberar espacio en disco urgentemente cuando un log descontrolado satura la partición, sin apagar el servicio que escribe.
+* **`journalctl -u <servicio>`**
+  * **Qué hace:** Consulta los registros centralizados del sistema (`systemd-journald`) para un servicio específico.
+  * **Uso NOC:** Investigar fallas profundas de arranque o ejecución cuando los logs de la aplicación son insuficientes.
+
+---
+
+## 🌐 4. Redes y Conectividad
+*Utilizados para validar la capa de transporte, puertos y resolución de nombres.*
+
+* **`ss -tlpn`**
+  * **Qué hace:** Lista sockets TCP en escucha (`-t`), puertos numéricos (`-n`), programas y PIDs asociados (`-p`).
+  * **Uso NOC:** Comprobar si un servicio realmente levantó y está escuchando en el puerto esperado.
+* **`dig <dominio>`**
+  * **Qué hace:** Consulta los servidores DNS para verificar la resolución de nombres de un dominio.
+  * **Uso NOC:** Diagnosticar problemas de conectividad asociados a fallos de DNS o propagación.
+* **`nc -zv <ip> <puerto>`**
+  * **Qué hace:** Realiza una prueba rápida de conectividad TCP hacia una IP y puerto específicos.
+  * **Uso NOC:** Verificar si hay bloqueos de red, firewalls o si un servicio remoto responde.
