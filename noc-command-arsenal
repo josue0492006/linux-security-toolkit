@@ -71,7 +71,16 @@
 | :--- | :--- | :--- |
 | `ps aux \| grep <proceso>` | Lista los procesos activos y filtra por palabra clave. | Verificar si un demonio o agente de monitoreo sigue corriendo. |
 | `ls -l` | Lista los archivos detallando permisos (`rwx`), propietario y grupo. | Revisar si un servicio no arranca por problemas de permisos en logs/configs. |
+## 🔎 Descubrimiento de Servicios (Auditoría)
 
+# Listar todos los servicios del sistema (activos e inactivos)
+systemctl list-unit-files --type=service
+
+# Filtrar servicios específicos por tipo de app (insensible a mayúsculas)
+systemctl list-units --type=service | grep -iE "nginx|apache|gunicorn|node|python|java|mysql|postgres"
+
+# Ver qué procesos están corriendo en memoria con sus rutas completas
+ps aux | grep -iE "nginx|gunicorn|node|python"
 ---
 
 <p align="center">
