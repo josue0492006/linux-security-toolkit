@@ -16,24 +16,27 @@
 
 ---
 
-## ⚙️ 2. Gestión de Servicios
-*Utilizados para verificar o restablecer el estado operativo.*
+## ⚙️ 2. Gestión de Servicios y Procesos
+*Utilizados para verificar, restablecer o detener el estado operativo.*
 
 | Comando | Descripción | Uso típico en el NOC |
 | :--- | :--- | :--- |
 | `systemctl status <servicio>` | Consulta el estado operativo de un servicio (`nginx`, `mysql`). | **Primer paso obligatorio** ante una alerta de servicio caído. |
 | `systemctl restart <servicio>` | Detiene y vuelve a iniciar un servicio del sistema. | Aplicar reinicios controlados autorizados por Runbooks (SOPs). |
+| `kill -9 <PID>` | Fuerza la terminación inmediata de un proceso usando su ID. | Matar un proceso rebelde o colgado que satura los recursos. |
 
 ---
 
 ## 📜 3. Análisis de Logs y Archivos
-*Utilizados para rastrear la causa raíz de un incidente.*
+*Utilizados para rastrear la causa raíz de un incidente y leer configuraciones.*
 
 | Comando | Descripción | Uso típico en el NOC |
 | :--- | :--- | :--- |
 | `tail -f [archivo]` | Muestra las últimas líneas y escucha nuevas entradas en tiempo real. | Monitorear errores en vivo mientras se reproduce una falla. |
 | `tail -n 50 [archivo]` | Muestra únicamente las últimas 50 líneas del archivo de registro. | Revisión rápida del histórico inmediato de un error. |
+| `less [archivo]` | Permite leer archivos largos de principio a fin navegando con flechas. | Revisar archivos de configuración extensos (`.conf`, `.env`). |
 | `grep -i "error" [archivo]` | Busca un patrón de texto ignorando mayúsculas/minúsculas (`-i`). | Filtrar palabras clave (`CRITICAL`, `FAILED`) en bitácoras pesadas. |
+| `zgrep "error" [archivo.gz]`| Busca patrones de texto directamente dentro de archivos de log comprimidos.| Analizar bitácoras históricas sin necesidad de descomprimirlas antes. |
 | `truncate -s 0 [archivo]` | Vacía el contenido a 0 bytes manteniendo el archivo abierto. | Liberar espacio urgente cuando un log satura el disco, sin apagar el servicio. |
 | `journalctl -u [servicio]` | Consulta los registros centralizados de systemd para un servicio. | Investigar fallas profundas de arranque o ejecución. |
 
@@ -48,11 +51,6 @@
 | `dig [dominio]` | Consulta los servidores DNS para verificar la resolución de nombres. | Diagnosticar problemas de conectividad por fallos de DNS. |
 | `nc -zv [ip] [puerto]` | Prueba rápida de conectividad TCP hacia una IP y puerto. | Verificar bloqueos de red, firewalls o si un servicio responde. |
 
----
-
-<p align="center">
-  <b>🚀 Preparándose para la operación 24/7</b>
-</p>
 ---
 
 ## 🔍 5. Diagnóstico de Red y Conectividad Básica
@@ -73,3 +71,9 @@
 | :--- | :--- | :--- |
 | `ps aux \| grep <proceso>` | Lista los procesos activos y filtra por palabra clave. | Verificar si un demonio o agente de monitoreo sigue corriendo. |
 | `ls -l` | Lista los archivos detallando permisos (`rwx`), propietario y grupo. | Revisar si un servicio no arranca por problemas de permisos en logs/configs. |
+
+---
+
+<p align="center">
+  <b>🚀 Preparándose para la operación 24/7</b>
+</p>
