@@ -53,3 +53,23 @@
 <p align="center">
   <b>🚀 Preparándose para la operación 24/7</b>
 </p>
+---
+
+## 🔍 5. Diagnóstico de Red y Conectividad Básica
+*Utilizados para validar rutas, pérdida de paquetes y latencia antes de escalar.*
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `ping -c 4 <ip>` | Envía 4 paquetes ICMP para verificar respuesta y latencia. | Validar conectividad básica de red hacia un host remoto. |
+| `traceroute <ip>` | Muestra todos los saltos de red por los que pasa el paquete. | Identificar exactamente en qué nodo o proveedor se corta la ruta. |
+| `curl -I <url>` | Realiza una petición HTTP y muestra únicamente los encabezados. | Verificar de forma inmediata códigos de estado HTTP (200, 404, 502). |
+
+---
+
+## 🔎 6. Procesos y Control del Sistema
+*Utilizados para rastrear demonios específicos y permisos de archivos.*
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `ps aux \| grep <proceso>` | Lista los procesos activos y filtra por palabra clave. | Verificar si un demonio o agente de monitoreo sigue corriendo. |
+| `ls -l` | Lista los archivos detallando permisos (`rwx`), propietario y grupo. | Revisar si un servicio no arranca por problemas de permisos en logs/configs. |
