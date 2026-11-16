@@ -1,11 +1,137 @@
-🛡️ NOC L1 — Arsenal de Comandos y Referencia OperativaGuía de referencia rápida (Cheat Sheet) y playbook operativo con los comandos esenciales de Linux para el diagnóstico, triaje inicial, monitoreo y resolución de incidentes en un entorno de Centro de Operaciones de Red e Infraestructura (NOC L1).📑 Tabla de ContenidosFlujo Rápido de Triaje (SOP L1)Salud del Sistema y RecursosGestión de Servicios y ProcesosAnálisis de Logs y ArchivosRedes, Conectividad y Diagnóstico BásicoDiagnóstico de Red Avanzada, Firewalls y CapturaProcesos, Permisos y Auditoría del SistemaReglas de Oro en Turno NOC⚡ Flujo Rápido de Triaje (SOP L1)Ante cualquier alerta en el sistema de monitoreo (Zabbix, Grafana, Nagios, PRTG), seguir este orden lógico antes de escalar a Nivel 2:[Alerta Recibida] 
-       │
-       ├──► 1. Validar Ventana de Mantenimiento (¿Es un trabajo programado?)
-       ├──► 2. Conectividad Base ──► ping -c 4 <IP> / mtr -r -c 10 <IP>
-       ├──► 3. Salud del Servidor ──► uptime / df -h / free -h / top
-       ├──► 4. Estado del Servicio ─► systemctl status <servicio> / ss -tlpn
-       └──► 5. Evidencia en Logs ───► journalctl -u <servicio> -n 50 / grep -i "error"
-🖥️ 1. Salud del Sistema y RecursosUtilizados cuando una alerta indica saturación de hardware, lentitud o bajo rendimiento.ComandoDescripciónUso típico en el NOCdf -hMuestra el espacio disponible y usado en los discos en formato legible.Validar alertas de disco lleno (No space left on device).du -sh *Muestra el tamaño acumulado de cada carpeta en el directorio actual.Localizar qué directorio específico está consumiendo el almacenamiento.free -hMuestra memoria RAM total, usada, libre y en caché.Verificar si el servidor sufre de agotamiento de memoria (OOM).top / htopLista en tiempo real los procesos ordenados por consumo de CPU/RAM.Identificar procesos colgados o consumo descontrolado de recursos.uptimeMuestra tiempo encendido, usuarios y carga promedio (load average).Obtener una foto rápida de la estabilidad general y reinicios recientes.⚙️ 2. Gestión de Servicios y ProcesosUtilizados para verificar, restablecer o detener el estado operativo de aplicaciones.ComandoDescripciónUso típico en el NOCsystemctl status <servicio>Consulta el estado operativo de un servicio (nginx, mysql).Primer paso obligatorio ante una alerta de servicio caído.systemctl start / stop <servicio>Inicia o detiene manualmente un servicio del sistema.Levantar servicios apagados o detener servicios problemáticos.systemctl restart <servicio>Detiene y vuelve a iniciar un servicio del sistema.Aplicar reinicios controlados autorizados por Runbooks (SOPs).systemctl enable <servicio>Configura el servicio para que inicie automáticamente al arrancar.Evitar que un servicio quede apagado tras un reinicio del servidor.kill -15 <PID>Envía señal SIGTERM para solicitar un cierre limpio y ordenado.Primera opción para detener procesos desbocados de forma segura.kill -9 <PID>Fuerza la terminación inmediata (SIGKILL) usando su ID.Matar un proceso rebelde o colgado que no responde a SIGTERM.📜 3. Análisis de Logs y ArchivosUtilizados para rastrear la causa raíz de un incidente y revisar configuraciones.ComandoDescripciónUso típico en el NOCtail -f [archivo]Muestra las últimas líneas y escucha nuevas entradas en tiempo real.Monitorear errores en vivo mientras se reproduce una falla.tail -n 50 [archivo]Muestra únicamente las últimas 50 líneas del archivo de registro.Revisión rápida del histórico inmediato de un error.less [archivo]Permite leer archivos largos de principio a fin navegando con flechas.Revisar archivos de configuración extensos (.conf, .env).grep -i "error" [archivo]Busca un patrón de texto ignorando mayúsculas/minúsculas (-i).Filtrar palabras clave (CRITICAL, FAILED) en bitácoras pesadas.zgrep "error" [archivo.gz]Busca patrones de texto directamente dentro de logs comprimidos.Analizar bitácoras históricas sin descomprimirlas antes.truncate -s 0 [archivo]Vacía el contenido a 0 bytes manteniendo el archivo abierto.Liberar espacio urgente cuando un log satura el disco sin apagar el servicio.journalctl -u [servicio] -n 50Consulta los registros centralizados de systemd para un servicio.Investigar fallas profundas de arranque o ejecución de servicios.🌐 4. Redes, Conectividad y Diagnóstico BásicoUtilizados para validar la capa de transporte, puertos, DNS y estado HTTP.ComandoDescripciónUso típico en el NOCss -tlpnLista sockets TCP en escucha (-t), puertos (-n) y PIDs (-p).Comprobar si un servicio local realmente levantó su puerto.dig [dominio]Consulta los servidores DNS para verificar la resolución de nombres.Diagnosticar problemas de conectividad por fallos de DNS.nc -zv [ip] [puerto]Prueba rápida de conectividad TCP hacia una IP y puerto remoto.Verificar bloqueos de red, firewalls o si un socket remoto responde.ping -c 4 <ip>Envía 4 paquetes ICMP para verificar respuesta y latencia.Validar conectividad básica de red (Capa 3) hacia un host remoto.curl -I <url>Realiza una petición HTTP y muestra únicamente los encabezados.Verificar de forma inmediata códigos de estado HTTP (200, 404, 502).🧠 Diferencia clave en diagnóstico de red:ss -tlpn $\rightarrow$ Mira hacia adentro (¿qué puertos tengo abiertos localmente?).nc -zv $\rightarrow$ Mira hacia afuera (¿puedo conectarme al puerto X de otro servidor?).dig $\rightarrow$ Valida resolución de nombres (¿el dominio traduce a la IP correcta?).curl -I $\rightarrow$ Valida capa web/HTTP (¿qué código de respuesta entrega la aplicación?).📡 5. Diagnóstico de Red Avanzada, Firewalls y CapturaUtilizados para diagnosticar pérdida de paquetes, bloqueo de puertos y enrutamiento.ComandoDescripciónUso típico en el NOCtraceroute <ip/dominio>Muestra todos los saltos (hops) por los que pasa el paquete.Identificar exactamente en qué router o nodo proveedor se corta la ruta.mtr -r -c 10 <ip/dominio>Combina traceroute y ping enviando 10 paquetes en reporte.Evaluar porcentaje de pérdida de paquetes (Loss%) y latencia por salto.tcpdump -i <iface> -nnCaptura y muestra tráfico de red en crudo en una interfaz.Verificar si los paquetes llegan a la tarjeta de red del servidor.tcpdump -i <iface> port <p>Filtra la captura de tráfico para un puerto específico (ej. port 80).Inspeccionar peticiones o respuestas HTTP/API específicas.ufw status numberedLista las reglas del firewall UFW con identificadores numéricos.Validar si un puerto está siendo bloqueado por la regla del servidor.iptables -L -v -nLista las reglas del firewall de kernel mostrando contadores.Analizar bloqueos en la cadena INPUT cuando no se usa UFW.ip route showMuestra la tabla de enrutamiento activa del sistema operativo.Verificar la puerta de enlace predeterminada (default gateway).🔎 6. Procesos, Permisos y Auditoría del SistemaUtilizados para rastrear demonios específicos, permisos y descubrir servicios.ComandoDescripciónUso típico en el NOCps aux | grep <proceso>Lista los procesos activos y filtra por palabra clave.Verificar si un demonio o agente de monitoreo sigue corriendo.ls -l [directorio/archivo]Lista archivos detallando permisos (rwx), propietario y grupo.Revisar si un servicio falla por permisos en logs o configuraciones.🔍 Snippets para Descubrimiento de Servicios# 1. Listar todos los archivos de unidades de servicio en systemd
+# 🛡️ NOC L1 — Arsenal de Comandos y Referencia Operativa
+
+![Linux](https://img.shields.io/badge/OS-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![Role](https://img.shields.io/badge/Role-NOC_L1-0078D4?style=for-the-badge&logo=gnubash&logoColor=white)
+![Status](https://img.shields.io/badge/Playbook-Operativo-2EA44F?style=for-the-badge)
+
+Guía de referencia rápida (*Cheat Sheet*) y playbook operativo con los comandos esenciales de Linux para el diagnóstico, triaje inicial, monitoreo y resolución de incidentes en un entorno de **Centro de Operaciones de Red e Infraestructura (NOC L1)**.
+
+---
+
+## 📑 Tabla de Contenidos
+
+- [⚡ Flujo Rápido de Triaje (SOP L1)](#-flujo-rápido-de-triaje-sop-l1)
+- [🖥️ 1. Salud del Sistema y Recursos](#️-1-salud-del-sistema-y-recursos)
+- [⚙️ 2. Gestión de Servicios y Procesos](#️-2-gestión-de-servicios-y-procesos)
+- [📜 3. Análisis de Logs y Archivos](#-3-análisis-de-logs-y-archivos)
+- [🌐 4. Redes, Conectividad y Diagnóstico Básico](#-4-redes-conectividad-y-diagnóstico-básico)
+- [📡 5. Diagnóstico de Red Avanzada, Firewalls y Captura](#-5-diagnóstico-de-red-avanzada-firewalls-y-captura)
+- [🔎 6. Procesos, Permisos y Auditoría del Sistema](#-6-procesos-permisos-y-auditoría-del-sistema)
+- [🛡️ Reglas de Oro en Turno NOC](#️-reglas-de-oro-en-turno-noc)
+
+---
+
+## ⚡ Flujo Rápido de Triaje (SOP L1)
+
+Ante cualquier alerta en el sistema de monitoreo (**Zabbix, Grafana, Nagios, PRTG**), sigue este orden lógico antes de escalar a Nivel 2:
+
+```text
+[Alerta Recibida]
+ │
+ ├──► 1. Validar Ventana de Mantenimiento (¿Es un trabajo programado?)
+ ├──► 2. Conectividad Base ──► ping -c 4 <ip> / mtr -r -c 10 <ip>
+ ├──► 3. Salud del Servidor ──► uptime / df -h / free -h / top
+ ├──► 4. Estado del Servicio ─► systemctl status <servicio> / ss -tlpn
+ └──► 5. Evidencia en Logs ───► journalctl -u <servicio> -n 50 / grep -i "error"
+```
+
+---
+
+## 🖥️ 1. Salud del Sistema y Recursos
+
+Utilizados cuando una alerta indica saturación de hardware, lentitud o bajo rendimiento.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `df -h` | Muestra el espacio disponible y usado en los discos en formato legible. | Validar alertas de disco lleno (`No space left on device`). |
+| `du -sh *` | Muestra el tamaño acumulado de cada carpeta en el directorio actual. | Localizar qué directorio específico está consumiendo el almacenamiento. |
+| `free -h` | Muestra memoria RAM total, usada, libre y en caché. | Verificar si el servidor sufre de agotamiento de memoria (OOM). |
+| `top` / `htop` | Lista en tiempo real los procesos ordenados por consumo de CPU/RAM. | Identificar procesos colgados o consumo descontrolado de recursos. |
+| `uptime` | Muestra tiempo encendido, usuarios y carga promedio (*load average*). | Obtener una foto rápida de la estabilidad general y reinicios recientes. |
+
+---
+
+## ⚙️ 2. Gestión de Servicios y Procesos
+
+Utilizados para verificar, restablecer o detener el estado operativo de aplicaciones.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `systemctl status <servicio>` | Consulta el estado operativo de un servicio (`nginx`, `mysql`). | Primer paso obligatorio ante una alerta de servicio caído. |
+| `systemctl start / stop <servicio>` | Inicia o detiene manualmente un servicio del sistema. | Levantar servicios apagados o detener servicios problemáticos. |
+| `systemctl restart <servicio>` | Detiene y vuelve a iniciar un servicio del sistema. | Aplicar reinicios controlados autorizados por Runbooks (SOPs). |
+| `systemctl enable <servicio>` | Configura el servicio para que inicie automáticamente al arrancar. | Evitar que un servicio quede apagado tras un reinicio del servidor. |
+| `kill -15 <PID>` | Envía señal `SIGTERM` para solicitar un cierre limpio y ordenado. | Primera opción para detener procesos desbocados de forma segura. |
+| `kill -9 <PID>` | Fuerza la terminación inmediata (`SIGKILL`) usando su ID. | Matar un proceso rebelde o colgado que no responde a `SIGTERM`. |
+
+---
+
+## 📜 3. Análisis de Logs y Archivos
+
+Utilizados para rastrear la causa raíz de un incidente y revisar configuraciones.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `tail -f [archivo]` | Muestra las últimas líneas y escucha nuevas entradas en tiempo real. | Monitorear errores en vivo mientras se reproduce una falla. |
+| `tail -n 50 [archivo]` | Muestra únicamente las últimas 50 líneas del archivo de registro. | Revisión rápida del histórico inmediato de un error. |
+| `less [archivo]` | Permite leer archivos largos de principio a fin navegando con flechas. | Revisar archivos de configuración extensos (`.conf`, `.env`). |
+| `grep -i "error" [archivo]` | Busca un patrón de texto ignorando mayúsculas/minúsculas (`-i`). | Filtrar palabras clave (`CRITICAL`, `FAILED`) en bitácoras pesadas. |
+| `zgrep "error" [archivo.gz]` | Busca patrones de texto directamente dentro de logs comprimidos. | Analizar bitácoras históricas sin descomprimirlas antes. |
+| `truncate -s 0 [archivo]` | Vacía el contenido a 0 bytes manteniendo el archivo abierto. | Liberar espacio urgente cuando un log satura el disco sin apagar el servicio. |
+| `journalctl -u [servicio] -n 50` | Consulta los registros centralizados de `systemd` para un servicio. | Investigar fallas profundas de arranque o ejecución de servicios. |
+
+---
+
+## 🌐 4. Redes, Conectividad y Diagnóstico Básico
+
+Utilizados para validar la capa de transporte, puertos, DNS y estado HTTP.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `ss -tlpn` | Lista sockets TCP en escucha (`-t`), puertos (`-n`) y PIDs (`-p`). | Comprobar si un servicio local realmente levantó su puerto. |
+| `dig [dominio]` | Consulta los servidores DNS para verificar la resolución de nombres. | Diagnosticar problemas de conectividad por fallos de DNS. |
+| `nc -zv [ip] [puerto]` | Prueba rápida de conectividad TCP hacia una IP y puerto remoto. | Verificar bloqueos de red, firewalls o si un socket remoto responde. |
+| `ping -c 4 <ip/dominio>` | Envía 4 paquetes ICMP para verificar respuesta y latencia. | Validar conectividad básica de red (Capa 3) hacia un host remoto. |
+| `curl -I <url>` | Realiza una petición HTTP y muestra únicamente los encabezados. | Verificar de forma inmediata códigos de estado HTTP (`200`, `404`, `502`). |
+
+> [!TIP]
+> **🧠 Diferencia clave en diagnóstico de red:**
+> * **`ss -tlpn`** → Mira hacia adentro (*¿qué puertos tengo abiertos localmente?*).
+> * **`nc -zv`** → Mira hacia afuera (*¿puedo conectarme al puerto X de otro servidor?*).
+> * **`dig`** → Valida resolución de nombres (*¿el dominio traduce a la IP correcta?*).
+> * **`curl -I`** → Valida capa web/HTTP (*¿qué código de respuesta entrega la aplicación?*).
+
+---
+
+## 📡 5. Diagnóstico de Red Avanzada, Firewalls y Captura
+
+Utilizados para diagnosticar pérdida de paquetes, bloqueo de puertos y enrutamiento.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `traceroute <ip/dominio>` | Muestra todos los saltos (*hops*) por los que pasa el paquete. | Identificar exactamente en qué router o nodo proveedor se corta la ruta. |
+| `mtr -r -c 10 <ip/dominio>` | Combina `traceroute` y `ping` enviando 10 paquetes en reporte. | Evaluar porcentaje de pérdida de paquetes (`Loss%`) y latencia por salto. |
+| `tcpdump -i <interfaz> -nn` | Captura y muestra tráfico de red en crudo en una interfaz. | Verificar si los paquetes llegan a la tarjeta de red del servidor. |
+| `tcpdump -i <interfaz> port <puerto>` | Filtra la captura de tráfico para un puerto específico (ej. `port 80`). | Inspeccionar peticiones o respuestas HTTP/API específicas. |
+| `ufw status numbered` | Lista las reglas del firewall UFW con identificadores numéricos. | Validar si un puerto está siendo bloqueado por la regla del servidor. |
+| `iptables -L -v -n` | Lista las reglas del firewall de kernel mostrando contadores. | Analizar bloqueos en la cadena `INPUT` cuando no se usa UFW. |
+| `ip route show` | Muestra la tabla de enrutamiento activa del sistema operativo. | Verificar la puerta de enlace predeterminada (*default gateway*). |
+
+---
+
+## 🔎 6. Procesos, Permisos y Auditoría del Sistema
+
+Utilizados para rastrear demonios específicos, permisos y descubrir servicios.
+
+| Comando | Descripción | Uso típico en el NOC |
+| :--- | :--- | :--- |
+| `ps aux \| grep <proceso>` | Lista los procesos activos y filtra por palabra clave. | Verificar si un demonio o agente de monitoreo sigue corriendo. |
+| `ls -l [directorio/archivo]` | Lista archivos detallando permisos (`rwx`), propietario y grupo. | Revisar si un servicio falla por permisos en logs o configuraciones. |
+
+### 🔍 Snippets para Descubrimiento de Servicios
+
+```bash
+# 1. Listar todos los archivos de unidades de servicio en systemd
 systemctl list-unit-files --type=service
 
 # 2. Filtrar servicios activos/inactivos por stack tecnológico
@@ -13,4 +139,14 @@ systemctl list-units --type=service | grep -iE "nginx|apache|gunicorn|uvicorn|fa
 
 # 3. Inspeccionar procesos activos en memoria con sus rutas completas de ejecución
 ps aux | grep -iE "nginx|gunicorn|uvicorn|node|python|java|postgres|mysql"
-🛡️ Reglas de Oro en Turno NOCNunca uses rm -rf sobre un log activo: El espacio en disco no se liberará mientras el proceso mantenga abierto el descriptor de archivo. Usa truncate -s 0 <archivo>.Siempre kill -15 antes de kill -9: Permite que la aplicación cierre conexiones a bases de datos y libere memoria limpiamente antes de forzar su cierre.Documenta antes de reiniciar: Antes de ejecutar un systemctl restart, captura los últimos logs (journalctl o tail -n 50) para que Nivel 2/3 pueda analizar la causa raíz.Escalamiento limpio: Todo ticket escalado debe incluir hora exacta del evento, host/IP afectada, salida de comandos ejecutados y acciones realizadas.
+```
+
+---
+
+## 🛡️ Reglas de Oro en Turno NOC
+
+> [!IMPORTANT]
+> 1. **Nunca uses `rm -rf` sobre un log activo:** El espacio en disco no se liberará mientras el proceso mantenga abierto el descriptor de archivo. Usa `truncate -s 0 <archivo>`.
+> 2. **Siempre `kill -15` antes de `kill -9`:** Permite que la aplicación cierre conexiones a bases de datos y libere memoria limpiamente antes de forzar su cierre.
+> 3. **Documenta antes de reiniciar:** Antes de ejecutar un `systemctl restart`, captura los últimos logs (`journalctl` o `tail -n 50`) para que Nivel 2/3 pueda analizar la causa raíz.
+> 4. **Escalamiento limpio:** Todo ticket escalado debe incluir: **hora exacta del evento**, **host/IP afectada**, **salida de comandos ejecutados** y **acciones realizadas**.
